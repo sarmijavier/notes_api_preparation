@@ -3,7 +3,10 @@ This is the views of Notes application
 """
 from rest_framework import mixins, generics
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.views import APIView
+from rest_framework.response import Response
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 from notes.permissions import IsOwnerOrReadOnly, IsOwner
 from notes.models import Note
 from notes.serializers import NoteSerializer, UserSerializer
@@ -70,3 +73,21 @@ class UserView(mixins.CreateModelMixin, generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class Login(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if username is None or password is None:
+            return Response({'error': 'Please provide both username and password'})
+
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'error': 'Invalid Credentials'})
+
+        login(request, user)
+        return Response({'success': True})
